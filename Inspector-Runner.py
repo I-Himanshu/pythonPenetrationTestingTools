@@ -1,4 +1,5 @@
 import Inspector
 
 INS = Inspector.Inspector("https://www.github.com")
-INS.scan()
+INS.ScanURLS()
+INS.ScanXSS
