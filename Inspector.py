@@ -54,9 +54,16 @@ class Inspector:
       "Host": urlparse(URL).netloc,
       "User-Agent": random.choice(user_agents)
     }
+    self.form_count = 0;
+    
+  def log(self,text):
+    with open(urlparse(self.base).netloc+".txt","a") as f:
+      f.write(text)
   def scan(self,url = None):
     if not url:
       url = self.base
+    if False or not url.startswith("http"):
+      return
     res = self._Session.get(url)
     if res.status_code == 200:
       self.active_urls.append(url)
@@ -65,8 +72,40 @@ class Inspector:
       for link in links:
         link = link.get("href")
         link = urljoin(self.base,link);
+        link = link.split("#")[0]
         if self.base in link and link not in self.urls:
           print(link)
           self.urls.append(link)
           self.scan(link)
+          
   
+  def getForms(self,URL):
+    res = self._Session.get(URL)
+    soup = BeautifulSoup(res.text,"html.parser")
+    forms = soup.find_all("form")
+    return forms
+  
+  def submit_form(self,FORM,url,value="Test7684"):
+    action = urljoin(url,FORM.get("action"))
+    method = FORM.get("method")
+    data = {}
+    for field in FORM.find_all("input"):
+      input_type = field.get("type")
+      input_name = field.get("name")
+      input_value = field.get("value")
+      if input_type == "text":
+        input_value = value
+      elif input_type == "email":
+        input_value = value+"@gmail.com"
+      elif input_type == "number":
+        input_value = 5403
+      data[input_name] = input_value
+    if method.lower() == "post":
+      response = self._Session.post(action,data=data).text
+    else:
+      response = self._Session.get(action,params=data).text
+    if input_value in response:
+      self.log("Vulnerability Found On {}\nAction {}\n".format(url, action))
+    else:
+      print(self.form_count)
+    self.form_count += 1
