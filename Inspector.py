@@ -47,7 +47,7 @@ Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_0) AppleWebKit/537.36 (KHTML, like G
 class Inspector:
   def __init__(self,URL):
     self.base = URL
-    self.urls = [URL]
+    self.urls = []
     self.active_urls = []
     self._Session = requests.Session()
     self.headers = {
@@ -59,7 +59,7 @@ class Inspector:
   def log(self,text):
     with open(urlparse(self.base).netloc+".txt","a") as f:
       f.write(text)
-  def scan(self,url = None):
+  def ScanURLS(self,url = None):
     if not url:
       url = self.base
     if False or not url.startswith("http"):
@@ -73,40 +73,38 @@ class Inspector:
         link = link.get("href")
         link = urljoin(self.base,link);
         link = link.split("#")[0]
-        if self.base in link and link not in self.urls:
+        if self.base in link and link not in self.active_urls:
           print(link)
-          self.urls.append(link)
           self.scan(link)
-          
-
   
-  def getForms(self,URL):
-    res = self._Session.get(URL)
+  def ScanXSS(self,url,value="Test7684"):
+    res = self._Session.get(url)
     soup = BeautifulSoup(res.text,"html.parser")
-    forms = soup.find_all("form")
-    return forms
-  
-  def submit_form(self,FORM,url,value="Test7684"):
-    action = urljoin(url,FORM.get("action"))
-    method = FORM.get("method")
-    data = {}
-    for field in FORM.find_all("input"):
-      input_type = field.get("type")
-      input_name = field.get("name")
-      input_value = field.get("value")
-      if input_type == "text":
-        input_value = value
-      elif input_type == "email":
-        input_value = value+"@gmail.com"
-      elif input_type == "number":
-        input_value = 5403
-      data[input_name] = input_value
-    if method.lower() == "post":
-      response = self._Session.post(action,data=data).text
-    else:
-      response = self._Session.get(action,params=data).text
-    if input_value in response:
-      self.log("Vulnerability Found On {}\nAction {}\n".format(url, action))
-    else:
-      print(self.form_count)
-    self.form_count += 1
+    FORMS = soup.find_all("form")
+    if len(FORMS) > 0:
+      print(f"{len(FORMS)} Forms detected on {url}")
+    for FORM in FORMS:
+      action = urljoin(url,FORM.get("action"))
+      method = FORM.get("method")
+      data = {}
+      for field in FORM.find_all("input"):
+        input_type = field.get("type")
+        input_name = field.get("name")
+        input_value = field.get("value")
+        if input_type == "text":
+          input_value = value
+        elif input_type == "email":
+          input_value = value+"@gmail.com"
+        elif input_type == "number":
+          input_value = 5403
+        data[input_name] = input_value
+      if method.lower() == "post":
+        response = self._Session.post(action,data=data).text
+      else:
+        response = self._Session.get(action,params=data).text
+      if input_value in response:
+        self.log("Vulnerability Found On {}\nAction {}\n{}\n".format(url, action,FORM))
+      else:
+        print(self.form_count)
+      self.form_count += 1
+    
