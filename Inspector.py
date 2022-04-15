@@ -78,6 +78,7 @@ class Inspector:
           self.urls.append(link)
           self.scan(link)
           
+
   
   def getForms(self,URL):
     res = self._Session.get(URL)
