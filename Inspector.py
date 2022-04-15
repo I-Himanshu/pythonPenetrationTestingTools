@@ -75,7 +75,7 @@ class Inspector:
         link = link.split("#")[0]
         if self.base in link and link not in self.active_urls:
           print(link)
-          self.scan(link)
+          self.ScanURLS(link)
   
   def ScanXSS(self,url,value="Test7684"):
     res = self._Session.get(url)
